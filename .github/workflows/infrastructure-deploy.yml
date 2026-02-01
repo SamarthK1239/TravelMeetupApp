@@ -86,25 +86,29 @@ jobs:
             --parameters infrastructure/parameters.${{ github.event.inputs.environment || 'dev' }}.json \
             --verbose
       
-      - name: Get Deployment Outputs
-        id: deploy_output
-        run: |
-          outputs=$(az deployment group show \
-            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
-            --name main \
-            --query properties.outputs)
-          echo "outputs=$outputs" >> $GITHUB_OUTPUT
-      
       - name: Display Deployment Summary
         run: |
+          WEB_APP_URL=$(az deployment group show \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --name main \
+            --query properties.outputs.webAppUrl.value -o tsv)
+          SQL_SERVER=$(az deployment group show \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --name main \
+            --query properties.outputs.sqlServerFqdn.value -o tsv)
+          KEY_VAULT=$(az deployment group show \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --name main \
+            --query properties.outputs.keyVaultName.value -o tsv)
+          
           echo "## Deployment Completed Successfully! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Environment: ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Deployed Resources:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Web App URL**: ${{ fromJson(steps.deploy_output.outputs.outputs).webAppUrl.value }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **SQL Server**: ${{ fromJson(steps.deploy_output.outputs.outputs).sqlServerFqdn.value }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Key Vault**: ${{ fromJson(steps.deploy_output.outputs.outputs).keyVaultName.value }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web App URL**: $WEB_APP_URL" >> $GITHUB_STEP_SUMMARY
+          echo "- **SQL Server**: $SQL_SERVER" >> $GITHUB_STEP_SUMMARY
+          echo "- **Key Vault**: $KEY_VAULT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "1. Verify resources in Azure Portal" >> $GITHUB_STEP_SUMMARY
