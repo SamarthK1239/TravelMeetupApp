@@ -1,0 +1,112 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Create Resource Group
+        run: |
+          az group create \
+            --name travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --location eastus
+      
+      - name: Validate Bicep Template
+        run: |
+          az deployment group validate \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters.${{ github.event.inputs.environment || 'dev' }}.json
+
+  preview:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: What-If Deployment
+        continue-on-error: true
+        run: |
+          az deployment group what-if \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters.${{ github.event.inputs.environment || 'dev' }}.json
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [validate, preview]
+    # environment: ${{ github.event.inputs.environment || 'dev' }}  # Optional: Configure in GitHub repo settings for deployment protection rules
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      - name: Deploy Infrastructure
+        run: |
+          az deployment group create \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --template-file infrastructure/main.bicep \
+            --parameters infrastructure/parameters.${{ github.event.inputs.environment || 'dev' }}.json \
+            --verbose
+      
+      - name: Get Deployment Outputs
+        id: deploy_output
+        run: |
+          outputs=$(az deployment group show \
+            --resource-group travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
+            --name main \
+            --query properties.outputs)
+          echo "outputs=$outputs" >> $GITHUB_OUTPUT
+      
+      - name: Display Deployment Summary
+        run: |
+          echo "## Deployment Completed Successfully! 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Environment: ${{ github.event.inputs.environment || 'dev' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed Resources:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web App URL**: ${{ fromJson(steps.deploy_output.outputs.outputs).webAppUrl.value }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **SQL Server**: ${{ fromJson(steps.deploy_output.outputs.outputs).sqlServerFqdn.value }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Key Vault**: ${{ fromJson(steps.deploy_output.outputs.outputs).keyVaultName.value }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify resources in Azure Portal" >> $GITHUB_STEP_SUMMARY
+          echo "2. Deploy application code using app-deploy workflow" >> $GITHUB_STEP_SUMMARY
+          echo "3. Run database migrations" >> $GITHUB_STEP_SUMMARY

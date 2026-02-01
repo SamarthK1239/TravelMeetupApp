@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "appNamePrefix": {
+      "value": "travelmeetup"
+    },
+    "sqlAdminUsername": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/eafff810-1c22-4a7a-8432-027b3723662f/resourceGroups/travelmeetup-secrets-rg/providers/Microsoft.KeyVault/vaults/travelmeetup-secrets-kv"
+        },
+        "secretName": "sql-admin-username"
+      }
+    },
+    "sqlAdminPassword": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/eafff810-1c22-4a7a-8432-027b3723662f/resourceGroups/travelmeetup-secrets-rg/providers/Microsoft.KeyVault/vaults/travelmeetup-secrets-kv"
+        },
+        "secretName": "sql-admin-password"
+      }
+    },
+    "jwtSecretKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/eafff810-1c22-4a7a-8432-027b3723662f/resourceGroups/travelmeetup-secrets-rg/providers/Microsoft.KeyVault/vaults/travelmeetup-secrets-kv"
+        },
+        "secretName": "jwt-secret-dev"
+      }
+    },
+    "jwtRefreshSecretKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/eafff810-1c22-4a7a-8432-027b3723662f/resourceGroups/travelmeetup-secrets-rg/providers/Microsoft.KeyVault/vaults/travelmeetup-secrets-kv"
+        },
+        "secretName": "jwt-refresh-secret-dev"
+      }
+    }
+  }
+}
