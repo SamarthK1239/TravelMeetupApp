@@ -36,7 +36,7 @@ jobs:
         run: |
           az group create \
             --name travelmeetup-rg-${{ github.event.inputs.environment || 'dev' }} \
-            --location eastus
+            --location eastus2
       
       - name: Validate Bicep Template
         run: |
