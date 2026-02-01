@@ -44,8 +44,8 @@ var appServicePlanSku = environment == 'prod' ? {
   tier: 'Standard'
   capacity: 1
 } : {
-  name: 'B1'
-  tier: 'Basic'
+  name: 'F1'
+  tier: 'Free'
   capacity: 1
 }
 
