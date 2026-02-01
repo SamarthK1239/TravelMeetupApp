@@ -35,7 +35,7 @@ var appServicePlanName = '${appNamePrefix}-plan-${environment}'
 var webAppName = '${appNamePrefix}-api-${environment}'
 var sqlServerName = '${appNamePrefix}-sql-${environment}'
 var sqlDatabaseName = '${appNamePrefix}-db-${environment}'
-var keyVaultName = '${appNamePrefix}-kv-${environment}'
+var keyVaultName = '${appNamePrefix}-kv2-${environment}'
 var appInsightsName = '${appNamePrefix}-ai-${environment}'
 
 // App Service Plan SKU based on environment
@@ -44,8 +44,8 @@ var appServicePlanSku = environment == 'prod' ? {
   tier: 'Standard'
   capacity: 1
 } : {
-  name: 'F1'
-  tier: 'Free'
+  name: 'B1'
+  tier: 'Basic'
   capacity: 1
 }
 
